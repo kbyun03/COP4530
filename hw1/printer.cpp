@@ -2,6 +2,11 @@
 // FSUID: YB23E
 // EMPLID: 201093220
 
+// to reference of iterator object &(*it)
+// document's user can be implemented as User Class
+
+
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -229,28 +234,37 @@ void progress(deque<Document*> &jobs, vector<User> &users, deque<Document*> &fin
     int currentPageCount = 0;
 
     while ( (currentPageCount < 8) && (checkQueue(jobs)) ){
-        deque<Document*>::iterator frontIterator = findJobIterator(jobs);
-        Document* front = *(frontIterator);
-        // cout << "progress document is "<< *front;
-        if (currentPageCount + front->getPages() <= 8){
-            currentPageCount += front->getPages();
-            //jobs.pop_front();
-            jobs.erase(frontIterator);
-            updateUserPage(users, front->getUser(), front->getPages());
+        // deque<Document*>::iterator frontIterator = findJobIterator(jobs);
+        // Document* front = *(frontIterator);
+        Document* front = jobs.front();
+        if (front->getStatus() == false){
+            // the document is not canceled
+            // cout << "progress document is "<< *front;
+            if (currentPageCount + front->getPages() <= 8){
+                currentPageCount += front->getPages();
+                jobs.pop_front();
+                // jobs.erase(frontIterator);
+                updateUserPage(users, front->getUser(), front->getPages());
 
-            // if finished, save it into the finishedJobs queue for later
-            finishedJobs.push_back(front);
+                // if finished, save it into the finishedJobs queue for later
+                finishedJobs.push_back(front);
+            }
+            else{
+                // if current page count and job's pages exceed limit
+                int pageCount = 8 - currentPageCount; // how many pages we are going to process during this turn
+                int rest = front->getPages() - pageCount; // rest of the pages left in current job
+                front->setPages(rest); // set rest of pages to current job
+                updateUserPage(users, front->getUser(), pageCount); // user's total count is going to get up by pageCount
+                currentPageCount = 8;
+            }
         }
         else{
-            // if current page count and job's pages exceed limit
-            int pageCount = 8 - currentPageCount; // how many pages we are going to process during this turn
-            int rest = front->getPages() - pageCount; // rest of the pages left in current job
-            front->setPages(rest); // set rest of pages to current job
-            updateUserPage(users, front->getUser(), pageCount); // user's total count is going to get up by pageCount
-            currentPageCount = 8;
+            jobs.pop_front();
         }
-//        cout << "after processing " << endl;
-//        printQueue(jobs);
+
+        
+    //    cout << "after processing " << endl;
+    //    printQueue(jobs);
 //        printUsers(users);
     }
 
@@ -281,7 +295,7 @@ int main(){
         totalTime += 1;
 //        printQueue(jobs);
 //        printUsers(users);
-        cout << "\nA - Add a new job \nC - Cancel a Job \nN - print next \nEnter your choice: ";
+        cout << "\nA - Add a new job \nC - Cancel a Job \nN - print next \nEnter your choice: " << endl;
         char userChoice;
         cin >> userChoice;
 

@@ -70,24 +70,20 @@ public:
 
 void insert(vector<Rock> &rocks, Rock newRock, ComparatorRocks cmp){
     vector<Rock>::iterator i = rocks.begin();
-    bool condition = true;
     for(i; i < rocks.end(); ++i){
         if(cmp(*i,newRock)){
             //cout << "rock at index i is smaller than newRock" << i->getSize() << "--" << newRock.getSize() << endl;
             continue;
         }
         else{
-            if(condition){
-                //cout << "rock at index i is larger than newRock" << i->getSize() << "--" << newRock.getSize() << endl;
-                //cout << "inserting newrock";
-                rocks.insert(i, newRock);
-            }
-            condition = false;
+            
+            //cout << "rock at index i is larger than newRock" << i->getSize() << "--" << newRock.getSize() << endl;
+            //cout << "inserting newrock";
+            rocks.insert(i, newRock);
+            return;
         }
     }
-    if(condition){
-        rocks.push_back(newRock);
-    }
+    rocks.push_back(newRock);
 }
 
 void sort_rocks(vector<Rock> &rocks){
@@ -98,7 +94,6 @@ void sort_rocks(vector<Rock> &rocks){
         Rock x = *i;
         vector<Rock>::iterator j = i - 1;
         while( j >= rocks.begin() and cmp(x,*j)){
-
             *(j+1) = *j;
             j--;
         }
@@ -116,7 +111,13 @@ void runSimulation(vector<Rock> &rocks, Rock &r0, ComparatorRocks cmp, bool &sur
     }
     else{
         // first rock is bigger than r0. r0 did not survive
-        cout << r0 << " was destroyed by colliding with " << firstRock <<endl;
+        if(r0.getSize() == firstRock.getSize()){
+            cout << r0 << " was destroyed by colliding with an equal-sized object" <<endl;
+        }
+        else{
+            cout << r0 << " was destroyed by colliding with an greater-sized object" <<endl;
+        }
+        
         survive = false;
         rocks.clear();
 
@@ -150,7 +151,6 @@ int main(){
     for(int i = 0 ; i < numberOfOtherRocks ; i++){
         string rock_name;
         double rock_size;
-        cout << "enter " << i << " ";
         cin >> rock_name >> rock_size;
         Rock rn(rock_name, rock_size);
         rocks.push_back(rn);
@@ -173,7 +173,7 @@ int main(){
         }
         else if(userChoice == 'A'){
             // add another rock
-            cout << "Enter the values for the new rock: ";
+            cout << "Enter the values for the new rock: "<< endl; 
             string rock_name;
             double rock_size;
             cin >> rock_name >> rock_size;
@@ -204,10 +204,10 @@ int main(){
     }
 
     if (survive){
-        cout << "Yes: " << r0 << " has survived"<< endl;
+        cout << r0 << " has survived"<< endl;
     }
     else{
-        cout << "No: " << r0 << " did not survive" << endl;
+        cout << r0 << " did not survive" << endl;
     }
 }
 

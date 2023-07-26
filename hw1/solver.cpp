@@ -7,7 +7,7 @@
 #include <vector>
 #include <stack>
 #include <iterator>
-#include <map>
+#include <sstream>
 
 using namespace std;
 
@@ -37,7 +37,7 @@ public:
     }
 
     friend ostream &operator<<( ostream &output, const Identifier &I){
-        output << I.getName() << I.getValue() << "\n";
+        output << I.getName() <<  ":" << I.getValue();
         return output;
     }
 
@@ -51,19 +51,36 @@ private:
     double value;
 };
 
-class CompareOperator{
-public:
-    bool operator()(string left, string right){
-        // returns true if right is larger than or equals to left precedence
-        int leftPrecedence = getOperatorPrecedence(left);
-        int rightPrecedence = getOperatorPrecedence(right);
-        if(leftPrecedence <= rightPrecedence){
-            return true;
-        }
-        return false;
+template <class T>
+void printVector(vector<T> &v){
+    typename vector<T>::iterator i;
+
+    for (i = v.begin(); i != v.end(); ++i)
+    {
+        cout << *i << " ";
     }
-private:
-    int getOperatorPrecedence(string op){
+    cout << endl;
+}
+
+bool isOperator(string s){
+    if(s == "+" || s == "-" || s == "*" || s == "*" || s == "/" || s == "(" || s == ")"){
+        return true;
+    }
+    return false;
+}
+
+bool is_numeric (string &str) 
+{
+    auto result = double();
+    // auto i = istringstream(str);
+    istringstream i(str);
+    i >> result;      
+    return !i.fail() && i.eof();
+}
+
+
+
+int getOperatorPrecedence(string op){
         if(op == "*" || op == "/"){
             return 2;
         }
@@ -74,97 +91,74 @@ private:
             return -1;
         }
     }
-};
 
-void printVector(vector<string> &v){
-    cout << "------- printing vector -------" << endl;
-    for (vector<string>::iterator i = v.begin(); i != v.end(); ++i)
-        cout << *i << ", ";
-
-    cout << "\n-------------------------------" << endl;
-}
-
-bool checkOperatorPrecedence(string left, string right){
-    // returns true if right precedes left
-    map<string, int> operatorPrecedenceMap;
-    operatorPrecedenceMap["+"] = 1;
-    operatorPrecedenceMap["-"] = 1;
-    operatorPrecedenceMap["*"] = 2;
-    operatorPrecedenceMap["/"] = 2;
-    operatorPrecedenceMap["("] = 3;
-    operatorPrecedenceMap[")"] = 3;
-
-    int valueLeft = operatorPrecedenceMap[left];
-    int valueRight = operatorPrecedenceMap[right];
-
-    return valueLeft < valueRight;
-
-}
-
-bool isOperator(string s){
-    if(s == "+" || s == "-" || s == "*" || s == "*" || s == "(" || s == ")"){
-        return true;
-    }
-    return false;
-}
-
-string infixToPostFix(vector<std::string> &output){
+vector<string> infixToPostFix(vector<std::string> &output){
 
     stack<string> operatorStack;
     string postFixOutput;
-    CompareOperator cmp;
+    vector<string> outputVector;
 
     for( vector<std::string>::iterator i = output.begin(); i != output.end(); i++){
-        cout << "processing " << *i << endl;
         if(isOperator(*i)){
             if(operatorStack.empty()){
-                cout << "stack is empty, pushing operator " << *i << endl;
                 operatorStack.push(*i);
             }
             else{
-                // something in the operatorStack
                 if(*i == "("){
                     operatorStack.push(*i);
                 }
                 else if(*i == ")"){
                     while (operatorStack.top() != "("){
-                        postFixOutput += *i;
+                        postFixOutput = postFixOutput + " " + operatorStack.top();
+                        outputVector.push_back(operatorStack.top());
                         operatorStack.pop();
                     }
                     operatorStack.pop();
                 }
                 else{
                     string topOperator = operatorStack.top();
-                    if(checkOperatorPrecedence(topOperator, *i)){
-                        // if current operator precede topOperator, then output the current operator
-                        postFixOutput += *i;
+
+                    int topOperatorPrecedence = getOperatorPrecedence(topOperator);
+                    int currentOperatorPrecence = getOperatorPrecedence(*i);
+
+                    if(topOperatorPrecedence < currentOperatorPrecence){
+                        // if current is heigher than lower, then just push operator to stack
+                        operatorStack.push(*i);
                     }
                     else{
-                        // current operator does not precede top Opeartor
-                        while(! (operatorStack.empty()) && (cmp(*i, topOperator))){
-                            postFixOutput += operatorStack.top();
+                        // if equal or lower, then
+                        while(! (operatorStack.empty()) && (topOperatorPrecedence >= currentOperatorPrecence)){
+                            postFixOutput = postFixOutput + " " + topOperator;
+                            outputVector.push_back(topOperator);
                             operatorStack.pop();
+
+                            topOperator = operatorStack.top();
+                            topOperatorPrecedence = getOperatorPrecedence(topOperator);
                         }
                         operatorStack.push(*i);
                     }
                 }
-
             }
         }
         else{
-            postFixOutput += *i;
+            postFixOutput = postFixOutput + " " + *i;
+            outputVector.push_back(*i);
         }
-        cout << "at the end of each loop " << postFixOutput << endl;
     }
-    cout << "at the end" << endl;
-    return postFixOutput;
+
+    while (!operatorStack.empty()){
+        postFixOutput = postFixOutput + " " + operatorStack.top();
+        outputVector.push_back(operatorStack.top());
+        operatorStack.pop();
+    }
+    // return postFixOutput;
+    return outputVector;
 }
 
-vector<std::string> tokenizer(string infixExpression){
-    cout << "tokenizer" << endl;
+vector<string> tokenizer(string infixExpression){
     string token;
     vector<string>* output = new vector<string>();
-    for( string::iterator i = infixExpression.begin(); i != infixExpression.end()+1; i++){
+    for( string::iterator i = infixExpression.begin(); i != infixExpression.end(); i++){
         if(*i != ' '){
             token += *i;
         }
@@ -180,20 +174,85 @@ vector<std::string> tokenizer(string infixExpression){
     return *output;
 }
 
+vector<Identifier> tokenizer(vector<string> &postFixExpression){
+    string token;
+    vector<Identifier>* output = new vector<Identifier>();
+
+    for (vector<string>::iterator i = postFixExpression.begin(); i != postFixExpression.end(); ++i)
+    {
+        
+        double val;
+        string name = *i;
+        if(is_numeric(*i)){
+            val = stod(*i);
+        }
+        else{
+            if(!isOperator(*i)){
+                cout << "Enter the value of " << *i << ": ";
+                cin >> val;
+                cout << endl;
+            }
+            else{
+                val = 0;
+            }
+        }
+        Identifier id(name, val);
+        output->push_back(id);
+    }
+    return *output;
+}
+
+double evaluateOperator(double left, double right, string op){
+    double result;
+    if(op == "+"){
+        result = left + right;
+    }
+    else if(op == "-"){
+        result = left - right;
+    }
+    else if(op == "*"){
+        result = left * right;
+    }
+    else if(op == "/"){
+        result = left / right;
+    }
+    return result;
+}
+
+double evaluatePostFix(vector<Identifier> identifierVector){
+    stack<double> postfixStack;
+    for (vector<Identifier>::iterator i = identifierVector.begin(); i != identifierVector.end(); ++i){
+        if(isOperator((*i).getName())){
+            double right = postfixStack.top();
+            postfixStack.pop();
+            double left = postfixStack.top();
+            postfixStack.pop();
+            double result = evaluateOperator(left, right, (*i).getName());
+            postfixStack.push(result);
+        }
+        else{
+            postfixStack.push((*i).getValue());
+        }
+        
+    }
+    return postfixStack.top();
+}
+
 
 int main(){
+    
     cout << "Enter the infix expression: " << endl;
     string infixExpression;
     getline(cin, infixExpression);
-    cout << "entered : " << infixExpression << endl;
 
     vector<string> output = tokenizer(infixExpression);
-    printVector(output);
 
-    string postFixOutput = infixToPostFix(output);
-    cout << "postFixOutput is " << postFixOutput << endl;
+    vector<string> postFixOutput = infixToPostFix(output);
+    cout << "postFixOutput is " << endl;
+    printVector(postFixOutput);
 
-
-
-
+    vector<Identifier> identifierVector = tokenizer(postFixOutput);
+    // printVector(identifierVector);
+    double postFixEvaluated = evaluatePostFix(identifierVector);
+    cout << "result is " << postFixEvaluated << endl;
 }
