@@ -1,0 +1,1 @@
+/bin/c++   -g    CMakeFiles/hw1.dir/solver.cpp.o  -o hw1 -rdynamic 
