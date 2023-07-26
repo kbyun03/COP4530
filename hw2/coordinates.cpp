@@ -25,6 +25,18 @@ public:
         BottomLeft = NULL;
         BottomRight = NULL;
     };
+    float get_x(){
+        return x;
+    }
+    float get_y(){
+        return y;
+    }
+    void set_x(float x_in){
+        x = x_in;
+    }
+    void set_y(float y_in){
+        y = y_in;
+    }
 
 private:
     float x;
@@ -44,9 +56,30 @@ public:
     QuadTree(float side_in){
         side = side_in;
     };
+
+    int findQuadrant(Node* n, float limit){
+        if((limit/2 > n->get_x()) && (limit/2 > n->get_y())){
+            return 1;
+        }
+        else if((limit/2 < n->get_x()) && (limit/2 > n->get_y())){
+            return 2;
+        }
+        else if((limit/2 > n->get_x()) && (limit/2 < n->get_y())){
+            return 3;
+        }
+        else if((limit/2 < n->get_x()) && (limit/2 < n->get_y())){
+            return 4;
+        }
+    }
+
     void insert(Node* n){
         if(root == NULL){
             root = n;
+        }
+        else
+        {
+            // need to split
+
         }
     }
     void print(){
